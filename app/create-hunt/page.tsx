@@ -53,6 +53,8 @@ export default function CreateHuntPage() {
   const [errors, setErrors] = useState<string[]>([]);
   const [isProcessingPayment, setIsProcessingPayment] = useState<boolean>(false);
   const [paymentStatus, setPaymentStatus] = useState<string>("");
+  const [showSuccessDialog, setShowSuccessDialog] = useState<boolean>(false);
+  const [createdHuntId, setCreatedHuntId] = useState<string>("");
 
   // Handle location change from map
   const handleLocationChange = (lat: number, lng: number) => {
@@ -209,8 +211,10 @@ export default function CreateHuntPage() {
       if (success) {
         console.log("Hunt created successfully:", hunt.huntId);
         setPaymentStatus("Hunt created successfully!");
-        // Navigate to hunt page
-        setTimeout(() => router.push("/hunt"), 1000);
+        setCreatedHuntId(hunt.huntId);
+        setIsProcessingPayment(false);
+        // Show success dialog instead of automatic redirect
+        setShowSuccessDialog(true);
       } else {
         setErrors(["Failed to save hunt to server. Please contact support."]);
         setIsProcessingPayment(false);
@@ -477,6 +481,77 @@ export default function CreateHuntPage() {
           </button>
         </div>
       </main>
+
+      {/* Success Modal */}
+      {showSuccessDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <Card className="w-full max-w-md animate-in fade-in zoom-in duration-300">
+            <CardHeader className="text-center pb-2">
+              <div className="flex justify-center mb-4">
+                <div className="h-16 w-16 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
+                  <span className="text-4xl">✅</span>
+                </div>
+              </div>
+              <CardTitle className="text-2xl">
+                Payment Successful!
+              </CardTitle>
+              <CardDescription className="text-center pt-2">
+                <p className="text-base font-medium text-green-600 dark:text-green-400">
+                  🎉 Your hunt has been created successfully!
+                </p>
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="bg-zinc-100 dark:bg-zinc-800 rounded-lg p-4 space-y-2">
+                <p className="text-sm">
+                  <span className="font-semibold">Campaign:</span> {campaignName}
+                </p>
+                <p className="text-sm">
+                  <span className="font-semibold">Total Paid:</span> {calculateTotalCost()} WLD
+                </p>
+                <p className="text-sm">
+                  <span className="font-semibold">Rewards:</span> {maxClaims} tokens spawned
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 font-mono break-all">
+                  Hunt ID: {createdHuntId}
+                </p>
+              </div>
+              
+              <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
+                🪙 Reward tokens have been spawned on the map and are ready for hunters to claim!
+              </p>
+
+              <div className="flex flex-col gap-3 pt-2">
+                <button
+                  onClick={() => {
+                    // Force a full page reload to ensure new hunt and rewards are loaded
+                    window.location.href = '/hunt';
+                  }}
+                  className="w-full h-12 rounded-full bg-black dark:bg-white text-white dark:text-black font-medium transition-colors hover:bg-zinc-800 dark:hover:bg-zinc-200"
+                >
+                  🏹 View Hunt Map
+                </button>
+                <button
+                  onClick={() => {
+                    setShowSuccessDialog(false);
+                    // Reset form
+                    setCampaignName("");
+                    setRewardAmount("");
+                    setMaxClaims("");
+                    setDescription("");
+                    setPinLocation(null);
+                    setRadiusMeters(50);
+                    setPaymentStatus("");
+                  }}
+                  className="w-full h-12 rounded-full border-2 border-zinc-300 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 font-medium transition-colors hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                >
+                  Create Another Hunt
+                </button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
