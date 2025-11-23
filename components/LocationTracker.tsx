@@ -2,13 +2,15 @@
 
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
-import LiveLocation from "@/components/LiveLocation";
 
 const LocationMap = dynamic(() => import("@/components/LocationMap"), {
   ssr: false,
   loading: () => (
     <div className="w-full h-[400px] bg-gray-100 rounded-lg flex items-center justify-center">
-      <p className="text-gray-600">Loading map...</p>
+      <div className="flex flex-col items-center gap-2">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-black"></div>
+        <p className="text-gray-600">Loading map...</p>
+      </div>
     </div>
   ),
 });
@@ -61,18 +63,33 @@ export default function LocationTracker() {
     return () => navigator.geolocation.clearWatch(watchId);
   }, []);
 
+  if (error) {
+    return (
+      <div className="w-full bg-red-50 border border-red-200 rounded-lg p-4">
+        <p className="text-red-600 font-medium">Location Error</p>
+        <p className="text-red-500 text-sm mt-1">{error}</p>
+      </div>
+    );
+  }
+
+  if (!coords) {
+    return (
+      <div className="w-full bg-white border border-gray-200 rounded-lg p-8 flex flex-col items-center gap-3">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-black"></div>
+        <p className="text-gray-600 font-medium">Acquiring GPS coordinates...</p>
+        <p className="text-sm text-gray-500">Please allow location access</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="w-full space-y-4">
-      {coords && (
-        <LocationMap lat={coords.lat} lng={coords.lng} accuracy={coords.accuracy} />
-      )}
-      <LiveLocation
-        coords={coords}
-        error={error}
-        lastUpdate={lastUpdate}
-        isUpdating={isUpdating}
-      />
-    </div>
+    <LocationMap
+      lat={coords.lat}
+      lng={coords.lng}
+      accuracy={coords.accuracy}
+      lastUpdate={lastUpdate}
+      isUpdating={isUpdating}
+    />
   );
 }
 
