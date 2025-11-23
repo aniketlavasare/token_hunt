@@ -1,9 +1,10 @@
 "use client";
 
-import { useRef, useEffect, useState } from "react";
-import Map, { Marker, GeolocateControl } from "react-map-gl/mapbox";
+import { useRef, useEffect, useState, useMemo } from "react";
+import Map, { Marker, GeolocateControl, Popup } from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import type { SpawnedReward } from "@/lib/rewards";
 
 type LocationMapProps = {
   lat: number;
@@ -11,6 +12,8 @@ type LocationMapProps = {
   accuracy: number;
   lastUpdate: Date | null;
   isUpdating: boolean;
+  rewards?: SpawnedReward[]; // Optional reward markers
+  onRewardClick?: (reward: SpawnedReward) => void; // Optional click handler
 };
 
 const MAPBOX_TOKEN = "pk.eyJ1IjoiYW5pa2V0YXZhc2FyZTQyMCIsImEiOiJjbWlhbjRmcDMwejNqMmxvZ2x3bmZ1Y2duIn0.QAG-0y4eiR1quyf7XJoV4A";
@@ -34,9 +37,23 @@ function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: numbe
   return R * c; // Distance in meters
 }
 
-export default function LocationMap({ lat, lng, accuracy, lastUpdate, isUpdating }: LocationMapProps) {
+export default function LocationMap({ 
+  lat, 
+  lng, 
+  accuracy, 
+  lastUpdate, 
+  isUpdating, 
+  rewards = [],
+  onRewardClick 
+}: LocationMapProps) {
   const mapRef = useRef<any>(null);
   const [lastMapCenter, setLastMapCenter] = useState<{ lat: number; lng: number } | null>(null);
+  const [selectedReward, setSelectedReward] = useState<SpawnedReward | null>(null);
+
+  // Filter unclaimed rewards for performance (memoized)
+  const unclaimedRewards = useMemo(() => {
+    return rewards.filter(r => !r.claimed);
+  }, [rewards]);
 
   // Update map center only when coordinates change significantly
   useEffect(() => {
@@ -105,6 +122,7 @@ export default function LocationMap({ lat, lng, accuracy, lastUpdate, isUpdating
               showAccuracyCircle={true}
             />
             
+            {/* User Location Marker (Blue Dot) */}
             <Marker
               longitude={lng}
               latitude={lat}
@@ -115,6 +133,52 @@ export default function LocationMap({ lat, lng, accuracy, lastUpdate, isUpdating
                 <div className="absolute top-0 left-0 h-3 w-3 sm:h-4 sm:w-4 bg-blue-500 rounded-full opacity-25 animate-ping"></div>
               </div>
             </Marker>
+
+            {/* Reward Markers (Gold Coins) */}
+            {unclaimedRewards.map((reward) => (
+              <Marker
+                key={reward.rewardId}
+                longitude={reward.lng}
+                latitude={reward.lat}
+                anchor="center"
+              >
+                <button
+                  className="relative cursor-pointer hover:scale-110 transition-transform"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelectedReward(reward);
+                    onRewardClick?.(reward);
+                  }}
+                  aria-label={`Reward: ${reward.amount} WLD`}
+                >
+                  {/* Gold Coin Icon */}
+                  <div className="text-2xl sm:text-3xl drop-shadow-lg">
+                    🪙
+                  </div>
+                  {/* Glow effect */}
+                  <div className="absolute inset-0 bg-yellow-400 rounded-full blur-sm opacity-50 animate-pulse -z-10"></div>
+                </button>
+              </Marker>
+            ))}
+
+            {/* Reward Info Popup */}
+            {selectedReward && (
+              <Popup
+                longitude={selectedReward.lng}
+                latitude={selectedReward.lat}
+                anchor="bottom"
+                offset={25}
+                onClose={() => setSelectedReward(null)}
+                closeButton={true}
+                closeOnClick={false}
+                className="reward-popup"
+              >
+                <div className="p-2 text-center">
+                  <p className="font-bold text-lg text-yellow-600">🪙 {selectedReward.amount.toFixed(4)} WLD</p>
+                  <p className="text-xs text-gray-600 mt-1">Click to claim</p>
+                </div>
+              </Popup>
+            )}
           </Map>
         </div>
 

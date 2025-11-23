@@ -7,6 +7,7 @@ import LocationTracker from "@/components/LocationTracker"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { fetchHuntsFromAPI, clearAllHuntsFromAPI, type Hunt } from "@/lib/hunts"
+import { fetchRewardsFromAPI, ensureRewardsSpawned, clearAllRewardsFromAPI, type SpawnedReward } from "@/lib/rewards"
 
 // Calculate distance between two points (Haversine formula)
 function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -26,12 +27,15 @@ function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: numbe
 
 export default function HuntPage() {
   const [hunts, setHunts] = useState<Hunt[]>([])
+  const [rewards, setRewards] = useState<SpawnedReward[]>([])
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [showClearConfirm, setShowClearConfirm] = useState(false)
+  const [isSpawningRewards, setIsSpawningRewards] = useState(false)
 
-  // Load hunts from API
+  // Load hunts and rewards from API, trigger spawning
   useEffect(() => {
-    const loadHunts = async () => {
+    const loadData = async () => {
+      // 1. Load hunts
       const loadedHunts = await fetchHuntsFromAPI()
       // Filter out invalid/incomplete hunts
       const validHunts = loadedHunts.filter(hunt => 
@@ -43,9 +47,24 @@ export default function HuntPage() {
       )
       setHunts(validHunts)
       console.log(`Loaded ${validHunts.length} valid hunts from API (${loadedHunts.length} total)`)
+
+      // 2. Ensure rewards are spawned (idempotent)
+      setIsSpawningRewards(true)
+      try {
+        await ensureRewardsSpawned(validHunts)
+        
+        // 3. Load rewards
+        const loadedRewards = await fetchRewardsFromAPI()
+        setRewards(loadedRewards)
+        console.log(`Loaded ${loadedRewards.length} rewards from API`)
+      } catch (error) {
+        console.error('Error spawning/loading rewards:', error)
+      } finally {
+        setIsSpawningRewards(false)
+      }
     }
     
-    loadHunts()
+    loadData()
 
     // Get user location
     if (navigator.geolocation) {
@@ -63,13 +82,18 @@ export default function HuntPage() {
     }
   }, [])
 
-  // Handle clear all hunts
+  // Handle clear all hunts and rewards
   const handleClearAllHunts = async () => {
-    const success = await clearAllHuntsFromAPI()
-    if (success) {
+    const huntsSuccess = await clearAllHuntsFromAPI()
+    const rewardsSuccess = await clearAllRewardsFromAPI()
+    
+    if (huntsSuccess && rewardsSuccess) {
       setHunts([])
+      setRewards([])
       setShowClearConfirm(false)
-      console.log("All hunts cleared from server!")
+      console.log("All hunts and rewards cleared from server!")
+    } else {
+      console.error("Failed to clear hunts/rewards")
     }
   }
 
@@ -97,9 +121,24 @@ export default function HuntPage() {
           </p>
         </div>
 
-        {/* Location Map */}
+        {/* Location Map with Reward Markers */}
         <div className="w-full px-2 sm:px-0">
-          <LocationTracker />
+          {isSpawningRewards ? (
+            <div className="w-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg p-8 flex flex-col items-center gap-3">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-yellow-500"></div>
+              <p className="text-gray-600 dark:text-zinc-400 font-medium text-sm sm:text-base text-center">
+                🪙 Spawning reward tokens...
+              </p>
+            </div>
+          ) : (
+            <LocationTracker 
+              rewards={rewards} 
+              onRewardClick={(reward) => {
+                console.log("Reward clicked:", reward);
+                // TODO: Implement claim logic
+              }}
+            />
+          )}
         </div>
 
         {/* Available Hunts Section */}

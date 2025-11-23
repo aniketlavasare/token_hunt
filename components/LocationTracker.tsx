@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
+import type { SpawnedReward } from "@/lib/rewards";
 
 const LocationMap = dynamic(() => import("@/components/LocationMap"), {
   ssr: false,
@@ -17,7 +18,12 @@ const LocationMap = dynamic(() => import("@/components/LocationMap"), {
 
 type Coords = { lat: number; lng: number; accuracy: number };
 
-export default function LocationTracker() {
+type LocationTrackerProps = {
+  rewards?: SpawnedReward[];
+  onRewardClick?: (reward: SpawnedReward) => void;
+};
+
+export default function LocationTracker({ rewards = [], onRewardClick }: LocationTrackerProps = {}) {
   const [coords, setCoords] = useState<Coords | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
@@ -187,6 +193,8 @@ export default function LocationTracker() {
       accuracy={coords.accuracy}
       lastUpdate={lastUpdate}
       isUpdating={isUpdating}
+      rewards={rewards}
+      onRewardClick={onRewardClick}
     />
   );
 }
