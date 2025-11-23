@@ -25,13 +25,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-    <MiniKitProvider>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <MiniKitProvider>
+          {children}
+        </MiniKitProvider>
       </body>
-      </MiniKitProvider>
     </html>
   );
 }
