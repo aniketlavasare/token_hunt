@@ -86,50 +86,50 @@ export default function HuntPage() {
     }
   }, [])
 
-  // Check if user is in range of any claimable rewards
-  useEffect(() => {
-    if (!userLocation || rewards.length === 0) return;
+  // Handle reward claim when user clicks on a reward token
+  const handleRewardClaim = (reward: SpawnedReward) => {
+    // Skip if already claimed
+    if (claimedRewardIds.has(reward.rewardId) || reward.claimed) {
+      console.log("Reward already claimed");
+      return;
+    }
 
-    const checkClaimableRewards = () => {
-      for (const reward of rewards) {
-        // Skip if already claimed locally
-        if (claimedRewardIds.has(reward.rewardId)) continue;
-        
-        // Skip if already claimed in database
-        if (reward.claimed) continue;
+    // Check if user is in range
+    if (!userLocation) {
+      console.log("User location not available");
+      return;
+    }
 
-        // Calculate distance to reward
-        const distance = calculateDistance(
-          userLocation.lat,
-          userLocation.lng,
-          reward.lat,
-          reward.lng
-        );
+    const distance = calculateDistance(
+      userLocation.lat,
+      userLocation.lng,
+      reward.lat,
+      reward.lng
+    );
 
-        // Check if user is within claimable distance
-        if (distance <= claimableDistance) {
-          console.log(`🎯 User in range of reward ${reward.rewardId} (${distance.toFixed(1)}m away)`);
-          
-          // Mark as claimed locally
-          setClaimedRewardIds(prev => new Set(prev).add(reward.rewardId));
-          
-          // Show claim popup
-          setClaimedReward(reward);
-          setShowClaimPopup(true);
-          
-          // Auto-hide after 4 seconds
-          setTimeout(() => {
-            setShowClaimPopup(false);
-          }, 4000);
-          
-          // Only claim one reward at a time
-          break;
-        }
-      }
-    };
+    console.log(`Distance to reward: ${distance.toFixed(1)}m`);
 
-    checkClaimableRewards();
-  }, [userLocation, rewards, claimedRewardIds, claimableDistance]);
+    // Only claim if within range
+    if (distance <= claimableDistance) {
+      console.log("✅ In range! Claiming reward...");
+      
+      // Mark as claimed locally
+      setClaimedRewardIds(prev => new Set(prev).add(reward.rewardId));
+      
+      // Show claim popup
+      setClaimedReward(reward);
+      setShowClaimPopup(true);
+      
+      // Auto-hide after 4 seconds
+      setTimeout(() => {
+        setShowClaimPopup(false);
+      }, 4000);
+    } else {
+      console.log(`❌ Not in range. Need to be within ${claimableDistance}m (currently ${distance.toFixed(1)}m away)`);
+      // Optionally show an error message to user
+      alert(`You're too far away! Get within ${claimableDistance}m to claim this reward. (Currently ${distance.toFixed(1)}m away)`);
+    }
+  };
 
   // Handle clear all hunts and rewards
   const handleClearAllHunts = async () => {
@@ -183,24 +183,7 @@ export default function HuntPage() {
           ) : (
             <LocationTracker 
               rewards={rewards.filter(r => !claimedRewardIds.has(r.rewardId))} 
-              onRewardClick={(reward) => {
-                console.log("Reward clicked:", reward);
-                // Calculate distance to check if in range
-                if (userLocation) {
-                  const distance = calculateDistance(
-                    userLocation.lat,
-                    userLocation.lng,
-                    reward.lat,
-                    reward.lng
-                  );
-                  console.log(`Distance to reward: ${distance.toFixed(1)}m`);
-                  if (distance <= claimableDistance) {
-                    console.log("✅ In range! Claiming...");
-                  } else {
-                    console.log(`❌ Not in range. Need to be within ${claimableDistance}m`);
-                  }
-                }
-              }}
+              onRewardClick={handleRewardClaim}
             />
           )}
         </div>
