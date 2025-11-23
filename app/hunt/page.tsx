@@ -6,7 +6,7 @@ import Image from "next/image"
 import LocationTracker from "@/components/LocationTracker"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { getHunts, type Hunt } from "@/lib/hunts"
+import { fetchHuntsFromAPI, clearAllHuntsFromAPI, type Hunt } from "@/lib/hunts"
 
 // Calculate distance between two points (Haversine formula)
 function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
@@ -27,12 +27,17 @@ function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: numbe
 export default function HuntPage() {
   const [hunts, setHunts] = useState<Hunt[]>([])
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
+  const [showClearConfirm, setShowClearConfirm] = useState(false)
 
-  // Load hunts from localStorage
+  // Load hunts from API
   useEffect(() => {
-    const loadedHunts = getHunts()
-    setHunts(loadedHunts)
-    console.log(`Loaded ${loadedHunts.length} hunts from localStorage`)
+    const loadHunts = async () => {
+      const loadedHunts = await fetchHuntsFromAPI()
+      setHunts(loadedHunts)
+      console.log(`Loaded ${loadedHunts.length} hunts from API`)
+    }
+    
+    loadHunts()
 
     // Get user location
     if (navigator.geolocation) {
@@ -49,6 +54,16 @@ export default function HuntPage() {
       )
     }
   }, [])
+
+  // Handle clear all hunts
+  const handleClearAllHunts = async () => {
+    const success = await clearAllHuntsFromAPI()
+    if (success) {
+      setHunts([])
+      setShowClearConfirm(false)
+      console.log("All hunts cleared from server!")
+    }
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black p-3 sm:p-4">
@@ -85,12 +100,46 @@ export default function HuntPage() {
             <h2 className="text-xl sm:text-2xl font-bold text-black dark:text-white">
               Available Hunts {hunts.length > 0 && `(${hunts.length})`}
             </h2>
-            <Link href="/create-hunt">
-              <button className="flex items-center gap-2 px-4 py-2 bg-black dark:bg-white text-white dark:text-black rounded-full text-sm font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors">
-                + Create
-              </button>
-            </Link>
+            <div className="flex items-center gap-2">
+              {/* Clear All Button (Testing) */}
+              {hunts.length > 0 && !showClearConfirm && (
+                <button
+                  onClick={() => setShowClearConfirm(true)}
+                  className="flex items-center gap-1 px-3 py-2 bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-full text-xs font-medium hover:bg-red-200 dark:hover:bg-red-900/40 transition-colors"
+                >
+                  🗑️ Clear
+                </button>
+              )}
+              <Link href="/create-hunt">
+                <button className="flex items-center gap-2 px-4 py-2 bg-black dark:bg-white text-white dark:text-black rounded-full text-sm font-medium hover:bg-zinc-800 dark:hover:bg-zinc-200 transition-colors">
+                  + Create
+                </button>
+              </Link>
+            </div>
           </div>
+
+          {/* Clear Confirmation */}
+          {showClearConfirm && (
+            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
+              <p className="text-red-800 dark:text-red-200 font-medium mb-3">
+                ⚠️ Clear all hunts? This cannot be undone.
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleClearAllHunts}
+                  className="px-4 py-2 bg-red-600 text-white rounded-full text-sm font-medium hover:bg-red-700 transition-colors"
+                >
+                  Yes, Clear All
+                </button>
+                <button
+                  onClick={() => setShowClearConfirm(false)}
+                  className="px-4 py-2 bg-zinc-200 dark:bg-zinc-700 text-black dark:text-white rounded-full text-sm font-medium hover:bg-zinc-300 dark:hover:bg-zinc-600 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
 
           {hunts.length === 0 ? (
             <Card>

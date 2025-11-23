@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
-import { saveHunt, generateHuntId, type Hunt } from "@/lib/hunts";
+import { saveHuntToAPI, generateHuntId, type Hunt } from "@/lib/hunts";
 
 // Dynamic import for map (client-side only)
 const CreateHuntMap = dynamic(() => import("@/components/CreateHuntMap"), {
@@ -25,13 +25,20 @@ const CreateHuntMap = dynamic(() => import("@/components/CreateHuntMap"), {
 export default function CreateHuntPage() {
   const router = useRouter();
   
-  // Get wallet address from URL params or session storage
+  // Get authenticated wallet address from session storage
   const [walletAddress] = useState<string>(() => {
     if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      return params.get("wallet") || sessionStorage.getItem("walletAddress") || "0x0000000000000000000000000000000000000000";
+      return sessionStorage.getItem("walletAddress") || "";
     }
-    return "0x0000000000000000000000000000000000000000";
+    return "";
+  });
+
+  // Redirect if no wallet address (not authenticated)
+  useState(() => {
+    if (typeof window !== "undefined" && !walletAddress) {
+      console.warn("No wallet address found, redirecting to home...");
+      router.push("/");
+    }
   });
 
   // Form state
@@ -96,18 +103,22 @@ export default function CreateHuntPage() {
   };
 
   // Handle form submission
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!validateForm()) {
       return;
     }
 
     try {
       const hunt = createHuntObject();
-      saveHunt(hunt);
-      console.log("Hunt created successfully:", hunt.huntId);
+      const success = await saveHuntToAPI(hunt);
       
-      // Navigate to hunt page
-      router.push("/hunt");
+      if (success) {
+        console.log("Hunt created successfully:", hunt.huntId);
+        // Navigate to hunt page
+        router.push("/hunt");
+      } else {
+        setErrors(["Failed to save hunt to server. Please try again."]);
+      }
     } catch (error) {
       console.error("Error creating hunt:", error);
       setErrors(["Failed to save hunt. Please try again."]);
@@ -137,6 +148,16 @@ export default function CreateHuntPage() {
           <p className="max-w-md text-base sm:text-lg leading-6 sm:leading-8 text-zinc-600 dark:text-zinc-400 px-2">
             Drop a pin, set rewards, and let the hunt begin!
           </p>
+
+          {/* Show wallet info */}
+          {walletAddress && (
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-zinc-500 dark:text-zinc-400">Sponsor:</span>
+              <Badge variant="secondary" className="font-mono text-xs">
+                {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+              </Badge>
+            </div>
+          )}
         </div>
 
         {/* Error Messages */}
@@ -260,15 +281,6 @@ export default function CreateHuntPage() {
                   rows={3}
                   className="w-full"
                 />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                  Sponsor Wallet
-                </label>
-                <Badge variant="secondary" className="font-mono text-xs">
-                  {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
-                </Badge>
               </div>
             </CardContent>
           </Card>

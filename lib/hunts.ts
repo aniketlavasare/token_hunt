@@ -114,6 +114,21 @@ export function claimHunt(huntId: string, walletAddress: string): boolean {
 }
 
 /**
+ * Clear all hunts from localStorage (useful for testing)
+ */
+export function clearAllHunts(): void {
+  if (!isBrowser) return;
+  
+  try {
+    localStorage.removeItem(HUNTS_KEY);
+    console.log("✅ All hunts cleared from localStorage");
+  } catch (error) {
+    console.error("Error clearing hunts:", error);
+    throw new Error("Failed to clear hunts");
+  }
+}
+
+/**
  * Generate a simple UUID v4
  */
 export function generateHuntId(): string {
@@ -122,5 +137,76 @@ export function generateHuntId(): string {
     const v = c === 'x' ? r : (r & 0x3 | 0x8);
     return v.toString(16);
   });
+}
+
+// ==================== API FUNCTIONS (Global Storage) ====================
+
+/**
+ * Fetch all hunts from the backend API
+ */
+export async function fetchHuntsFromAPI(): Promise<Hunt[]> {
+  try {
+    const response = await fetch('/api/hunts', {
+      method: 'GET',
+      cache: 'no-store', // Always get fresh data
+    })
+    
+    if (!response.ok) {
+      throw new Error('Failed to fetch hunts from API')
+    }
+    
+    const data = await response.json()
+    console.log(`Fetched ${data.count} hunts from API`)
+    return data.hunts
+  } catch (error) {
+    console.error('Error fetching hunts from API:', error)
+    return []
+  }
+}
+
+/**
+ * Save a hunt to the backend API
+ */
+export async function saveHuntToAPI(hunt: Hunt): Promise<boolean> {
+  try {
+    const response = await fetch('/api/hunts', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(hunt),
+    })
+    
+    if (!response.ok) {
+      throw new Error('Failed to save hunt to API')
+    }
+    
+    console.log('Hunt saved to API:', hunt.huntId)
+    return true
+  } catch (error) {
+    console.error('Error saving hunt to API:', error)
+    return false
+  }
+}
+
+/**
+ * Clear all hunts from the backend API
+ */
+export async function clearAllHuntsFromAPI(): Promise<boolean> {
+  try {
+    const response = await fetch('/api/hunts', {
+      method: 'DELETE',
+    })
+    
+    if (!response.ok) {
+      throw new Error('Failed to clear hunts from API')
+    }
+    
+    console.log('✅ All hunts cleared from API')
+    return true
+  } catch (error) {
+    console.error('Error clearing hunts from API:', error)
+    return false
+  }
 }
 

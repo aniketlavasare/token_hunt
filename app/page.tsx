@@ -121,6 +121,10 @@ export default function Home() {
       if (result.status === 'success' && result.isValid) {
         console.log('Wallet connected:', result.address)
         setWalletAddress(result.address)
+        // Store wallet address in sessionStorage for use across pages
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('walletAddress', result.address)
+        }
       } else {
         setError('Wallet verification failed')
       }
@@ -270,7 +274,7 @@ export default function Home() {
               🏹 Start Hunt
             </button>
           </Link>
-          <Link href={`/create-hunt?wallet=${walletAddress}`} className="w-full sm:w-auto">
+          <Link href="/create-hunt" className="w-full sm:w-auto">
             <button className="flex h-12 sm:h-12 w-full items-center justify-center gap-2 rounded-full border border-solid border-black/8 px-6 sm:px-8 transition-colors hover:border-transparent hover:bg-black/4 dark:border-white/[.145] dark:hover:bg-[#1a1a1a]">
               ➕ Create Hunt
             </button>
