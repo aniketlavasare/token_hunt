@@ -33,8 +33,16 @@ export default function HuntPage() {
   useEffect(() => {
     const loadHunts = async () => {
       const loadedHunts = await fetchHuntsFromAPI()
-      setHunts(loadedHunts)
-      console.log(`Loaded ${loadedHunts.length} hunts from API`)
+      // Filter out invalid/incomplete hunts
+      const validHunts = loadedHunts.filter(hunt => 
+        hunt.huntId && 
+        hunt.lat !== undefined && 
+        hunt.lng !== undefined && 
+        hunt.campaignName &&
+        hunt.sponsorWallet
+      )
+      setHunts(validHunts)
+      console.log(`Loaded ${validHunts.length} valid hunts from API (${loadedHunts.length} total)`)
     }
     
     loadHunts()
@@ -209,12 +217,14 @@ export default function HuntPage() {
                         </p>
                       )}
 
-                      <div className="flex items-center gap-2 text-xs">
-                        <span className="text-zinc-500 dark:text-zinc-400">Sponsor:</span>
-                        <Badge variant="outline" className="font-mono">
-                          {hunt.sponsorWallet.slice(0, 6)}...{hunt.sponsorWallet.slice(-4)}
-                        </Badge>
-                      </div>
+                      {hunt.sponsorWallet && (
+                        <div className="flex items-center gap-2 text-xs">
+                          <span className="text-zinc-500 dark:text-zinc-400">Sponsor:</span>
+                          <Badge variant="outline" className="font-mono">
+                            {hunt.sponsorWallet.slice(0, 6)}...{hunt.sponsorWallet.slice(-4)}
+                          </Badge>
+                        </div>
+                      )}
 
                       <div className="pt-2">
                         {!isActive ? (

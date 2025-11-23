@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import dynamic from "next/dynamic";
+import { MiniKit, tokenToDecimals, Tokens, PayCommandInput, MiniAppPaymentSuccessPayload } from '@worldcoin/minikit-js';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -50,6 +51,8 @@ export default function CreateHuntPage() {
   const [description, setDescription] = useState<string>("");
   const [showJsonPreview, setShowJsonPreview] = useState<boolean>(false);
   const [errors, setErrors] = useState<string[]>([]);
+  const [isProcessingPayment, setIsProcessingPayment] = useState<boolean>(false);
+  const [paymentStatus, setPaymentStatus] = useState<string>("");
 
   // Handle location change from map
   const handleLocationChange = (lat: number, lng: number) => {
@@ -102,26 +105,120 @@ export default function CreateHuntPage() {
     };
   };
 
-  // Handle form submission
+  // Calculate total cost for hunt creation
+  const calculateTotalCost = (): number => {
+    const reward = parseFloat(rewardAmount) || 0;
+    const claims = parseInt(maxClaims) || 0;
+    return reward * claims;
+  };
+
+  // Handle payment process
+  const handlePayment = async (): Promise<boolean> => {
+    try {
+      setPaymentStatus("Initiating payment...");
+      
+      const totalCost = calculateTotalCost();
+      
+      // Initiate payment
+      const res = await fetch('/api/initiate-payment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: totalCost.toString() }),
+      });
+      
+      const { id } = await res.json();
+      console.log('Payment reference:', id);
+
+      setPaymentStatus("Opening payment dialog...");
+
+      // Prepare payment payload
+      const payload: PayCommandInput = {
+        reference: id,
+        to: '0x67568fc3909c150df04fe916e9b7f52333b51a21', // Your payment address
+        tokens: [
+          {
+            symbol: Tokens.WLD,
+            token_amount: tokenToDecimals(totalCost, Tokens.WLD).toString(),
+          },
+        ],
+        description: `Token Hunt: ${campaignName.trim() || 'New Hunt'} - ${totalCost} WLD`,
+      };
+
+      if (!MiniKit.isInstalled()) {
+        setErrors(['MiniKit is not installed']);
+        return false;
+      }
+
+      setPaymentStatus("Waiting for payment confirmation...");
+
+      const { finalPayload } = await MiniKit.commandsAsync.pay(payload);
+      console.log('Payment response:', finalPayload);
+
+      if (finalPayload.status === 'success') {
+        setPaymentStatus("Verifying payment...");
+        
+        const verifyRes = await fetch(`/api/confirm-payment`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ payload: finalPayload as MiniAppPaymentSuccessPayload }),
+        });
+        
+        const payment = await verifyRes.json();
+        console.log('Payment verification:', payment);
+        
+        if (payment.success) {
+          setPaymentStatus("Payment successful! Creating hunt...");
+          return true;
+        } else {
+          setErrors(['Payment verification failed. Please try again.']);
+          return false;
+        }
+      } else {
+        setErrors(['Payment was cancelled or failed']);
+        return false;
+      }
+    } catch (error) {
+      console.error('Payment error:', error);
+      setErrors(['Payment failed. Please try again.']);
+      return false;
+    }
+  };
+
+  // Handle form submission with payment
   const handleSubmit = async () => {
     if (!validateForm()) {
       return;
     }
 
+    setIsProcessingPayment(true);
+    setPaymentStatus("");
+    
     try {
+      // Process payment first
+      const paymentSuccess = await handlePayment();
+      
+      if (!paymentSuccess) {
+        setIsProcessingPayment(false);
+        return;
+      }
+
+      // Payment successful, create hunt
       const hunt = createHuntObject();
       const success = await saveHuntToAPI(hunt);
       
       if (success) {
         console.log("Hunt created successfully:", hunt.huntId);
+        setPaymentStatus("Hunt created successfully!");
         // Navigate to hunt page
-        router.push("/hunt");
+        setTimeout(() => router.push("/hunt"), 1000);
       } else {
-        setErrors(["Failed to save hunt to server. Please try again."]);
+        setErrors(["Failed to save hunt to server. Please contact support."]);
+        setIsProcessingPayment(false);
       }
     } catch (error) {
       console.error("Error creating hunt:", error);
-      setErrors(["Failed to save hunt. Please try again."]);
+      setErrors(["Failed to create hunt. Please try again."]);
+      setIsProcessingPayment(false);
     }
   };
 
@@ -172,6 +269,20 @@ export default function CreateHuntPage() {
                   <li key={index}>{error}</li>
                 ))}
               </ul>
+            </div>
+          </div>
+        )}
+
+        {/* Payment Status */}
+        {isProcessingPayment && paymentStatus && (
+          <div className="w-full px-4 sm:px-0">
+            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+              <div className="flex items-center gap-3">
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-blue-600 border-t-transparent"></div>
+                <p className="text-blue-800 dark:text-blue-200 font-medium text-sm">
+                  {paymentStatus}
+                </p>
+              </div>
             </div>
           </div>
         )}
@@ -306,6 +417,41 @@ export default function CreateHuntPage() {
               </CardContent>
             )}
           </Card>
+
+          {/* Cost Summary */}
+          <Card className="border-2 border-blue-200 dark:border-blue-800">
+            <CardHeader>
+              <CardTitle className="text-lg">💰 Payment Required</CardTitle>
+              <CardDescription>Total cost to create this hunt</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400">Reward per claim</p>
+                  <p className="text-lg font-semibold text-black dark:text-white">
+                    {rewardAmount || 0} WLD
+                  </p>
+                </div>
+                <span className="text-2xl text-zinc-400">×</span>
+                <div>
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400">Max claims</p>
+                  <p className="text-lg font-semibold text-black dark:text-white">
+                    {maxClaims || 0}
+                  </p>
+                </div>
+                <span className="text-2xl text-zinc-400">=</span>
+                <div>
+                  <p className="text-sm text-zinc-600 dark:text-zinc-400">Total</p>
+                  <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                    {calculateTotalCost()} WLD
+                  </p>
+                </div>
+              </div>
+              <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 text-sm text-blue-800 dark:text-blue-200">
+                💡 This amount will be paid to fund the hunt rewards. Users will claim from this pool.
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Action Buttons */}
@@ -317,9 +463,17 @@ export default function CreateHuntPage() {
           </Link>
           <button
             onClick={handleSubmit}
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-black dark:bg-white px-6 sm:px-8 text-white dark:text-black transition-colors hover:bg-zinc-800 dark:hover:bg-zinc-200 sm:w-auto"
+            disabled={isProcessingPayment}
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-black dark:bg-white px-6 sm:px-8 text-white dark:text-black transition-colors hover:bg-zinc-800 dark:hover:bg-zinc-200 sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            🚀 Create Hunt
+            {isProcessingPayment ? (
+              <>
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white dark:border-black border-t-transparent"></div>
+                Processing...
+              </>
+            ) : (
+              <>💳 Pay {calculateTotalCost()} WLD & Create Hunt</>
+            )}
           </button>
         </div>
       </main>
