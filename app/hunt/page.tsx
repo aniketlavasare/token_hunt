@@ -35,6 +35,8 @@ export default function HuntPage() {
   const [showClaimPopup, setShowClaimPopup] = useState(false)
   const [claimedReward, setClaimedReward] = useState<SpawnedReward | null>(null)
   const [claimableDistance, setClaimableDistance] = useState(10) // 10 meters default
+  const [showRedeemPopup, setShowRedeemPopup] = useState(false)
+  const [redeemedHunt, setRedeemedHunt] = useState<Hunt | null>(null)
 
   // Load hunts and rewards from API, trigger spawning
   useEffect(() => {
@@ -321,7 +323,13 @@ export default function HuntPage() {
                             Hunt Completed
                           </button>
                         ) : canClaim ? (
-                          <button className="w-full h-10 rounded-full bg-green-600 hover:bg-green-700 text-white font-medium transition-colors">
+                          <button 
+                            onClick={() => {
+                              setRedeemedHunt(hunt);
+                              setShowRedeemPopup(true);
+                            }}
+                            className="w-full h-10 rounded-full bg-green-600 hover:bg-green-700 text-white font-medium transition-colors"
+                          >
                             🎯 Claim Reward
                           </button>
                         ) : (
@@ -387,79 +395,57 @@ export default function HuntPage() {
         </div>
       </main>
 
-      {/* Claim Reward Popup */}
-      {showClaimPopup && claimedReward && (
+      {/* Reward Redemption Popup */}
+      {showRedeemPopup && redeemedHunt && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-          <Card className="w-full max-w-sm mx-4 animate-in zoom-in duration-500 relative overflow-hidden">
-            {/* Confetti/Celebration Background Effect */}
-            <div className="absolute inset-0 bg-gradient-to-br from-yellow-100 via-orange-50 to-yellow-100 dark:from-yellow-900/20 dark:via-orange-900/10 dark:to-yellow-900/20 opacity-50"></div>
-            
-            {/* Animated Coin Rain */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-              {[...Array(20)].map((_, i) => (
-                <div
-                  key={i}
-                  className="absolute text-2xl animate-bounce"
-                  style={{
-                    left: `${Math.random() * 100}%`,
-                    top: `-${Math.random() * 20}%`,
-                    animationDelay: `${Math.random() * 2}s`,
-                    animationDuration: `${2 + Math.random() * 2}s`,
-                  }}
-                >
-                  🪙
-                </div>
-              ))}
-            </div>
-
-            <CardContent className="relative z-10 py-8 text-center space-y-4">
+          <Card className="w-full max-w-sm mx-4 animate-in zoom-in duration-300">
+            <CardContent className="py-8 text-center space-y-4">
               {/* Success Icon */}
-              <div className="flex justify-center mb-2">
-                <div className="relative">
-                  <div className="h-20 w-20 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center animate-bounce">
-                    <span className="text-5xl">🎉</span>
-                  </div>
-                  <div className="absolute inset-0 h-20 w-20 rounded-full bg-yellow-400 animate-ping opacity-20"></div>
+              <div className="flex justify-center mb-4">
+                <div className="h-16 w-16 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
+                  <span className="text-4xl">✅</span>
                 </div>
               </div>
 
               {/* Success Message */}
               <div className="space-y-2">
-                <h2 className="text-3xl font-bold text-yellow-600 dark:text-yellow-400 animate-pulse">
-                  Reward Claimed!
+                <h2 className="text-2xl font-bold text-black dark:text-white">
+                  Reward Redeemed!
                 </h2>
-                <p className="text-sm text-gray-600 dark:text-gray-300">
-                  You found a treasure! 🏆
-                </p>
-              </div>
-
-              {/* Reward Amount */}
-              <div className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-lg border-2 border-yellow-400 dark:border-yellow-600">
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">You earned</p>
-                <p className="text-4xl font-bold text-yellow-600 dark:text-yellow-400">
-                  +{claimedReward.amount.toFixed(4)} WLD
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 font-mono">
-                  Reward #{claimedReward.rewardId.slice(0, 8)}...
-                </p>
-              </div>
-
-              {/* Celebration Text */}
-              <div className="space-y-2 pt-2">
-                <p className="text-lg font-semibold text-gray-700 dark:text-gray-200">
-                  ✨ Amazing! ✨
-                </p>
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Keep exploring to find more rewards!
+                  Your reward has been successfully redeemed
+                </p>
+              </div>
+
+              {/* Reward Details */}
+              <div className="bg-zinc-100 dark:bg-zinc-800 rounded-lg p-4 space-y-2">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  <span className="font-semibold">Campaign:</span> {redeemedHunt.campaignName}
+                </p>
+                <p className="text-lg font-bold text-green-600 dark:text-green-400">
+                  +{redeemedHunt.rewardAmount} WLD
+                </p>
+              </div>
+
+              {/* Wallet Message */}
+              <div className="space-y-2 pt-2">
+                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                  💰 Your reward will show up in your wallet shortly
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Please check your wallet to confirm the transaction
                 </p>
               </div>
 
               {/* Close Button */}
               <button
-                onClick={() => setShowClaimPopup(false)}
-                className="mt-4 w-full h-12 rounded-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-bold transition-all duration-300 transform hover:scale-105 shadow-lg"
+                onClick={() => {
+                  setShowRedeemPopup(false);
+                  setRedeemedHunt(null);
+                }}
+                className="mt-4 w-full h-12 rounded-full bg-green-600 hover:bg-green-700 text-white font-medium transition-colors"
               >
-                Awesome! 🚀
+                Got it! 👍
               </button>
             </CardContent>
           </Card>
