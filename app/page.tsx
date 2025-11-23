@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import Image from "next/image"
+import Link from "next/link"
 import { MiniKit, VerifyCommandInput, VerificationLevel, ISuccessResult, MiniAppWalletAuthSuccessPayload } from '@worldcoin/minikit-js'
 import LocationTracker from "@/components/LocationTracker"
 import { Badge } from "@/components/ui/badge"
@@ -236,25 +237,44 @@ export default function Home() {
           </div>
 
           <p className="max-w-md text-base sm:text-lg leading-6 sm:leading-8 text-zinc-600 dark:text-zinc-400 px-2">
-            Your live coordinates are being tracked. Start hunting for tokens!
+            Welcome to Token Hunt! Start hunting for tokens or create your own campaign.
           </p>
         </div>
 
-        <div className="w-full px-2 sm:px-0">
-          <LocationTracker />
+        {/* Feature Cards */}
+        <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-4 px-4 sm:px-0">
+          <div className="bg-white dark:bg-zinc-900 rounded-lg p-6 shadow-sm border border-zinc-200 dark:border-zinc-800">
+            <div className="text-3xl mb-3">🏹</div>
+            <h3 className="text-lg font-semibold mb-2 text-black dark:text-white">
+              Hunt Tokens
+            </h3>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+              Discover and collect tokens hidden at various locations around you
+            </p>
+          </div>
+
+          <div className="bg-white dark:bg-zinc-900 rounded-lg p-6 shadow-sm border border-zinc-200 dark:border-zinc-800">
+            <div className="text-3xl mb-3">🚀</div>
+            <h3 className="text-lg font-semibold mb-2 text-black dark:text-white">
+              Create Campaign
+            </h3>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">
+              Set up your own token hunt and engage with your community
+            </p>
+          </div>
         </div>
 
         <div className="flex w-full flex-col gap-3 sm:gap-4 text-base font-medium sm:flex-row sm:justify-center px-4 sm:px-0">
-          <button
-            className="flex h-12 sm:h-12 w-full items-center justify-center gap-2 rounded-full bg-black dark:bg-white px-6 sm:px-8 text-white dark:text-black transition-colors hover:bg-zinc-800 dark:hover:bg-zinc-200 sm:w-auto"
-          >
-            🏹 Start Hunt
-          </button>
-          <button
-            className="flex h-12 sm:h-12 w-full items-center justify-center gap-2 rounded-full border border-solid border-black/8 px-6 sm:px-8 transition-colors hover:border-transparent hover:bg-black/4 dark:border-white/[.145] dark:hover:bg-[#1a1a1a] sm:w-auto"
-          >
-            💰 View Tokens
-          </button>
+          <Link href="/hunt" className="w-full sm:w-auto">
+            <button className="flex h-12 sm:h-12 w-full items-center justify-center gap-2 rounded-full bg-black dark:bg-white px-6 sm:px-8 text-white dark:text-black transition-colors hover:bg-zinc-800 dark:hover:bg-zinc-200">
+              🏹 Start Hunt
+            </button>
+          </Link>
+          <Link href="/campaign" className="w-full sm:w-auto">
+            <button className="flex h-12 sm:h-12 w-full items-center justify-center gap-2 rounded-full border border-solid border-black/8 px-6 sm:px-8 transition-colors hover:border-transparent hover:bg-black/4 dark:border-white/[.145] dark:hover:bg-[#1a1a1a]">
+              🚀 Create Campaign
+            </button>
+          </Link>
         </div>
       </main>
     </div>
