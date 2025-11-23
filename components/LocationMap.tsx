@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useEffect } from "react";
+import { useRef, useEffect, useState } from "react";
 import Map, { Marker, GeolocateControl } from "react-map-gl/mapbox";
 import "mapbox-gl/dist/mapbox-gl.css";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,18 +15,59 @@ type LocationMapProps = {
 
 const MAPBOX_TOKEN = "pk.eyJ1IjoiYW5pa2V0YXZhc2FyZTQyMCIsImEiOiJjbWlhbjRmcDMwejNqMmxvZ2x3bmZ1Y2duIn0.QAG-0y4eiR1quyf7XJoV4A";
 
+// Minimum distance in meters to trigger a map update (reduces unnecessary requests)
+const MIN_DISTANCE_THRESHOLD = 5; // 5 meters
+
+// Calculate distance between two coordinates using Haversine formula
+function calculateDistance(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371e3; // Earth's radius in meters
+  const φ1 = (lat1 * Math.PI) / 180;
+  const φ2 = (lat2 * Math.PI) / 180;
+  const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+  const Δλ = ((lng2 - lng1) * Math.PI) / 180;
+
+  const a =
+    Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return R * c; // Distance in meters
+}
+
 export default function LocationMap({ lat, lng, accuracy, lastUpdate, isUpdating }: LocationMapProps) {
   const mapRef = useRef<any>(null);
+  const [lastMapCenter, setLastMapCenter] = useState<{ lat: number; lng: number } | null>(null);
 
-  // Update map center when coordinates change
+  // Update map center only when coordinates change significantly
   useEffect(() => {
     if (mapRef.current) {
-      mapRef.current.flyTo({
-        center: [lng, lat],
-        duration: 1000,
-      });
+      // If this is the first update, always update the map
+      if (!lastMapCenter) {
+        mapRef.current.flyTo({
+          center: [lng, lat],
+          duration: 1000,
+        });
+        setLastMapCenter({ lat, lng });
+        console.log('Map initialized at:', { lat, lng });
+        return;
+      }
+
+      // Calculate distance from last map center
+      const distance = calculateDistance(lastMapCenter.lat, lastMapCenter.lng, lat, lng);
+      
+      // Only update map if movement is significant
+      if (distance >= MIN_DISTANCE_THRESHOLD) {
+        mapRef.current.flyTo({
+          center: [lng, lat],
+          duration: 1000,
+        });
+        setLastMapCenter({ lat, lng });
+        console.log(`Map updated - moved ${distance.toFixed(1)}m`);
+      } else {
+        console.log(`Map not updated - movement too small (${distance.toFixed(1)}m < ${MIN_DISTANCE_THRESHOLD}m)`);
+      }
     }
-  }, [lat, lng]);
+  }, [lat, lng, lastMapCenter]);
 
   return (
     <Card className="w-full overflow-hidden">
