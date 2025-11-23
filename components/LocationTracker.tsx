@@ -66,18 +66,18 @@ export default function LocationTracker() {
   if (error) {
     return (
       <div className="w-full bg-red-50 border border-red-200 rounded-lg p-4">
-        <p className="text-red-600 font-medium">Location Error</p>
-        <p className="text-red-500 text-sm mt-1">{error}</p>
+        <p className="text-red-600 font-medium text-sm sm:text-base">Location Error</p>
+        <p className="text-red-500 text-xs sm:text-sm mt-1">{error}</p>
       </div>
     );
   }
 
   if (!coords) {
     return (
-      <div className="w-full bg-white border border-gray-200 rounded-lg p-8 flex flex-col items-center gap-3">
+      <div className="w-full bg-white border border-gray-200 rounded-lg p-6 sm:p-8 flex flex-col items-center gap-3">
         <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-black"></div>
-        <p className="text-gray-600 font-medium">Acquiring GPS coordinates...</p>
-        <p className="text-sm text-gray-500">Please allow location access</p>
+        <p className="text-gray-600 font-medium text-sm sm:text-base text-center">Acquiring GPS coordinates...</p>
+        <p className="text-xs sm:text-sm text-gray-500 text-center">Please allow location access</p>
       </div>
     );
   }

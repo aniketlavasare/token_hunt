@@ -69,27 +69,27 @@ export default function Home() {
   // Show verification screen if not verified
   if (!isVerified) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-        <main className="flex flex-col items-center justify-center gap-8 py-32 px-16 bg-white dark:bg-black rounded-lg shadow-lg max-w-md">
+      <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black p-4">
+        <main className="flex flex-col items-center justify-center gap-6 sm:gap-8 py-8 px-4 sm:py-32 sm:px-16 bg-white dark:bg-black rounded-lg shadow-lg max-w-md w-full">
           <Image
             className="dark:invert"
             src="/next.svg"
             alt="Next.js logo"
-            width={150}
-            height={30}
+            width={120}
+            height={24}
             priority
           />
-          <div className="flex flex-col items-center gap-4 text-center">
-            <h1 className="text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
+          <div className="flex flex-col items-center gap-3 sm:gap-4 text-center">
+            <h1 className="text-2xl sm:text-3xl font-semibold leading-8 sm:leading-10 tracking-tight text-black dark:text-zinc-50">
               Hello there, Verify with World ID
             </h1>
-            <p className="text-lg leading-8 text-zinc-600 dark:text-zinc-400">
+            <p className="text-base sm:text-lg leading-6 sm:leading-8 text-zinc-600 dark:text-zinc-400 px-2">
               Please verify your identity to access Token Hunt
             </p>
           </div>
           
           {error && (
-            <div className="text-red-500 text-sm bg-red-50 dark:bg-red-900/20 px-4 py-2 rounded-lg">
+            <div className="text-red-500 text-sm bg-red-50 dark:bg-red-900/20 px-4 py-2 rounded-lg w-full">
               {error}
             </div>
           )}
@@ -97,7 +97,7 @@ export default function Home() {
           <button
             onClick={handleVerify}
             disabled={isVerifying}
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-black dark:bg-white px-8 text-white dark:text-black font-medium transition-colors hover:bg-zinc-800 dark:hover:bg-zinc-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-black dark:bg-white px-6 sm:px-8 text-white dark:text-black font-medium transition-colors hover:bg-zinc-800 dark:hover:bg-zinc-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isVerifying ? 'Verifying...' : 'Verify with World ID'}
           </button>
@@ -108,37 +108,37 @@ export default function Home() {
 
   // Show homepage after verification
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black p-4">
-      <main className="flex w-full max-w-3xl flex-col items-center gap-8 py-12">
-        <div className="flex w-full flex-col items-center gap-6 text-center">
+    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black p-3 sm:p-4">
+      <main className="flex w-full max-w-3xl flex-col items-center gap-6 sm:gap-8 py-6 sm:py-12">
+        <div className="flex w-full flex-col items-center gap-4 sm:gap-6 text-center px-4">
           <Image
             className="dark:invert"
             src="/next.svg"
             alt="Next.js logo"
-            width={120}
-            height={24}
+            width={100}
+            height={20}
             priority
           />
-          <h1 className="text-4xl font-bold tracking-tight text-black dark:text-zinc-50">
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-black dark:text-zinc-50">
             🎯 Token Hunt
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
+          <p className="max-w-md text-base sm:text-lg leading-6 sm:leading-8 text-zinc-600 dark:text-zinc-400 px-2">
             You have been successfully verified! Your live coordinates are being tracked.
           </p>
         </div>
 
-        <div className="w-full">
+        <div className="w-full px-2 sm:px-0">
           <LocationTracker />
         </div>
 
-        <div className="flex w-full flex-col gap-4 text-base font-medium sm:flex-row sm:justify-center">
+        <div className="flex w-full flex-col gap-3 sm:gap-4 text-base font-medium sm:flex-row sm:justify-center px-4 sm:px-0">
           <button
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-black dark:bg-white px-8 text-white dark:text-black transition-colors hover:bg-zinc-800 dark:hover:bg-zinc-200 sm:w-auto"
+            className="flex h-12 sm:h-12 w-full items-center justify-center gap-2 rounded-full bg-black dark:bg-white px-6 sm:px-8 text-white dark:text-black transition-colors hover:bg-zinc-800 dark:hover:bg-zinc-200 sm:w-auto"
           >
             🏹 Start Hunt
           </button>
           <button
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full border border-solid border-black/8 px-8 transition-colors hover:border-transparent hover:bg-black/4 dark:border-white/[.145] dark:hover:bg-[#1a1a1a] sm:w-auto"
+            className="flex h-12 sm:h-12 w-full items-center justify-center gap-2 rounded-full border border-solid border-black/8 px-6 sm:px-8 transition-colors hover:border-transparent hover:bg-black/4 dark:border-white/[.145] dark:hover:bg-[#1a1a1a] sm:w-auto"
           >
             💰 View Tokens
           </button>
