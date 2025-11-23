@@ -31,6 +31,10 @@ export default function HuntPage() {
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null)
   const [showClearConfirm, setShowClearConfirm] = useState(false)
   const [isSpawningRewards, setIsSpawningRewards] = useState(false)
+  const [claimedRewardIds, setClaimedRewardIds] = useState<Set<string>>(new Set())
+  const [showClaimPopup, setShowClaimPopup] = useState(false)
+  const [claimedReward, setClaimedReward] = useState<SpawnedReward | null>(null)
+  const [claimableDistance, setClaimableDistance] = useState(10) // 10 meters default
 
   // Load hunts and rewards from API, trigger spawning
   useEffect(() => {
@@ -82,6 +86,51 @@ export default function HuntPage() {
     }
   }, [])
 
+  // Check if user is in range of any claimable rewards
+  useEffect(() => {
+    if (!userLocation || rewards.length === 0) return;
+
+    const checkClaimableRewards = () => {
+      for (const reward of rewards) {
+        // Skip if already claimed locally
+        if (claimedRewardIds.has(reward.rewardId)) continue;
+        
+        // Skip if already claimed in database
+        if (reward.claimed) continue;
+
+        // Calculate distance to reward
+        const distance = calculateDistance(
+          userLocation.lat,
+          userLocation.lng,
+          reward.lat,
+          reward.lng
+        );
+
+        // Check if user is within claimable distance
+        if (distance <= claimableDistance) {
+          console.log(`🎯 User in range of reward ${reward.rewardId} (${distance.toFixed(1)}m away)`);
+          
+          // Mark as claimed locally
+          setClaimedRewardIds(prev => new Set(prev).add(reward.rewardId));
+          
+          // Show claim popup
+          setClaimedReward(reward);
+          setShowClaimPopup(true);
+          
+          // Auto-hide after 4 seconds
+          setTimeout(() => {
+            setShowClaimPopup(false);
+          }, 4000);
+          
+          // Only claim one reward at a time
+          break;
+        }
+      }
+    };
+
+    checkClaimableRewards();
+  }, [userLocation, rewards, claimedRewardIds, claimableDistance]);
+
   // Handle clear all hunts and rewards
   const handleClearAllHunts = async () => {
     const huntsSuccess = await clearAllHuntsFromAPI()
@@ -90,6 +139,7 @@ export default function HuntPage() {
     if (huntsSuccess && rewardsSuccess) {
       setHunts([])
       setRewards([])
+      setClaimedRewardIds(new Set()) // Clear claimed rewards
       setShowClearConfirm(false)
       console.log("All hunts and rewards cleared from server!")
     } else {
@@ -103,11 +153,11 @@ export default function HuntPage() {
         <div className="flex w-full flex-col items-center gap-4 sm:gap-6 text-center px-4">
           <Link href="/">
             <Image
-              className="dark:invert cursor-pointer"
-              src="/next.svg"
-              alt="Next.js logo"
-              width={100}
-              height={20}
+              className="cursor-pointer"
+              src="/token_hunt_logo.png"
+              alt="Token Hunt logo"
+              width={70}
+              height={70}
               priority
             />
           </Link>
@@ -132,10 +182,24 @@ export default function HuntPage() {
             </div>
           ) : (
             <LocationTracker 
-              rewards={rewards} 
+              rewards={rewards.filter(r => !claimedRewardIds.has(r.rewardId))} 
               onRewardClick={(reward) => {
                 console.log("Reward clicked:", reward);
-                // TODO: Implement claim logic
+                // Calculate distance to check if in range
+                if (userLocation) {
+                  const distance = calculateDistance(
+                    userLocation.lat,
+                    userLocation.lng,
+                    reward.lat,
+                    reward.lng
+                  );
+                  console.log(`Distance to reward: ${distance.toFixed(1)}m`);
+                  if (distance <= claimableDistance) {
+                    console.log("✅ In range! Claiming...");
+                  } else {
+                    console.log(`❌ Not in range. Need to be within ${claimableDistance}m`);
+                  }
+                }
               }}
             />
           )}
@@ -301,18 +365,24 @@ export default function HuntPage() {
               <CardTitle className="text-lg">Your Stats</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-4 text-center">
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+                    {claimedRewardIds.size}
+                  </p>
+                  <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400">Rewards Found</p>
+                </div>
                 <div>
                   <p className="text-2xl font-bold text-black dark:text-white">
                     {hunts.reduce((sum, h) => sum + h.claimedCount, 0)}
                   </p>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400">Total Claims</p>
+                  <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400">Total Claims</p>
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-black dark:text-white">
                     {hunts.filter((h) => h.claimedCount >= h.maxClaims).length}
                   </p>
-                  <p className="text-sm text-zinc-600 dark:text-zinc-400">Completed Hunts</p>
+                  <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400">Completed</p>
                 </div>
               </div>
             </CardContent>
@@ -333,6 +403,85 @@ export default function HuntPage() {
           </Link>
         </div>
       </main>
+
+      {/* Claim Reward Popup */}
+      {showClaimPopup && claimedReward && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+          <Card className="w-full max-w-sm mx-4 animate-in zoom-in duration-500 relative overflow-hidden">
+            {/* Confetti/Celebration Background Effect */}
+            <div className="absolute inset-0 bg-gradient-to-br from-yellow-100 via-orange-50 to-yellow-100 dark:from-yellow-900/20 dark:via-orange-900/10 dark:to-yellow-900/20 opacity-50"></div>
+            
+            {/* Animated Coin Rain */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+              {[...Array(20)].map((_, i) => (
+                <div
+                  key={i}
+                  className="absolute text-2xl animate-bounce"
+                  style={{
+                    left: `${Math.random() * 100}%`,
+                    top: `-${Math.random() * 20}%`,
+                    animationDelay: `${Math.random() * 2}s`,
+                    animationDuration: `${2 + Math.random() * 2}s`,
+                  }}
+                >
+                  🪙
+                </div>
+              ))}
+            </div>
+
+            <CardContent className="relative z-10 py-8 text-center space-y-4">
+              {/* Success Icon */}
+              <div className="flex justify-center mb-2">
+                <div className="relative">
+                  <div className="h-20 w-20 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center animate-bounce">
+                    <span className="text-5xl">🎉</span>
+                  </div>
+                  <div className="absolute inset-0 h-20 w-20 rounded-full bg-yellow-400 animate-ping opacity-20"></div>
+                </div>
+              </div>
+
+              {/* Success Message */}
+              <div className="space-y-2">
+                <h2 className="text-3xl font-bold text-yellow-600 dark:text-yellow-400 animate-pulse">
+                  Reward Claimed!
+                </h2>
+                <p className="text-sm text-gray-600 dark:text-gray-300">
+                  You found a treasure! 🏆
+                </p>
+              </div>
+
+              {/* Reward Amount */}
+              <div className="bg-white dark:bg-zinc-800 rounded-xl p-4 shadow-lg border-2 border-yellow-400 dark:border-yellow-600">
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">You earned</p>
+                <p className="text-4xl font-bold text-yellow-600 dark:text-yellow-400">
+                  +{claimedReward.amount.toFixed(4)} WLD
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 font-mono">
+                  Reward #{claimedReward.rewardId.slice(0, 8)}...
+                </p>
+              </div>
+
+              {/* Celebration Text */}
+              <div className="space-y-2 pt-2">
+                <p className="text-lg font-semibold text-gray-700 dark:text-gray-200">
+                  ✨ Amazing! ✨
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Keep exploring to find more rewards!
+                </p>
+              </div>
+
+              {/* Close Button */}
+              <button
+                onClick={() => setShowClaimPopup(false)}
+                className="mt-4 w-full h-12 rounded-full bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-600 hover:to-orange-600 text-white font-bold transition-all duration-300 transform hover:scale-105 shadow-lg"
+              >
+                Awesome! 🚀
+              </button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   )
 }

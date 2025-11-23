@@ -142,11 +142,11 @@ export default function Home() {
       <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black p-4">
         <main className="flex flex-col items-center justify-center gap-6 sm:gap-8 py-8 px-4 sm:py-32 sm:px-16 bg-white dark:bg-black rounded-lg shadow-lg max-w-md w-full">
           <Image
-            className="dark:invert"
-            src="/next.svg"
-            alt="Next.js logo"
-            width={120}
-            height={24}
+            className=""
+            src="/token_hunt_logo.png"
+            alt="Token Hunt logo"
+            width={80}
+            height={80}
             priority
           />
           <div className="flex flex-col items-center gap-3 sm:gap-4 text-center">
@@ -221,11 +221,11 @@ export default function Home() {
       <main className="flex w-full max-w-3xl flex-col items-center gap-6 sm:gap-8 py-6 sm:py-12">
         <div className="flex w-full flex-col items-center gap-4 sm:gap-6 text-center px-4">
           <Image
-            className="dark:invert"
-            src="/next.svg"
-            alt="Next.js logo"
-            width={100}
-            height={20}
+            className=""
+            src="/token_hunt_logo.png"
+            alt="Token Hunt logo"
+            width={70}
+            height={70}
             priority
           />
           <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-black dark:text-zinc-50">

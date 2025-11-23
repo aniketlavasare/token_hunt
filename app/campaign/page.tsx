@@ -10,11 +10,11 @@ export default function CampaignPage() {
         <div className="flex w-full flex-col items-center gap-4 sm:gap-6 text-center px-4">
           <Link href="/">
             <Image
-              className="dark:invert cursor-pointer"
-              src="/next.svg"
-              alt="Next.js logo"
-              width={100}
-              height={20}
+              className="cursor-pointer"
+              src="/token_hunt_logo.png"
+              alt="Token Hunt logo"
+              width={70}
+              height={70}
               priority
             />
           </Link>
