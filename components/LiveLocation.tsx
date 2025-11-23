@@ -1,57 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 type Coords = { lat: number; lng: number; accuracy: number };
 
-export default function LiveLocation() {
-  const [coords, setCoords] = useState<Coords | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
-  const [isUpdating, setIsUpdating] = useState(false);
+type LiveLocationProps = {
+  coords: Coords | null;
+  error: string | null;
+  lastUpdate: Date | null;
+  isUpdating: boolean;
+};
 
-  useEffect(() => {
-    if (!("geolocation" in navigator)) {
-      setError("Geolocation not supported");
-      return;
-    }
-
-    const watchId = navigator.geolocation.watchPosition(
-      (pos) => {
-        // Trigger update animation
-        setIsUpdating(true);
-        
-        setCoords({
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
-          accuracy: pos.coords.accuracy,
-        });
-        setLastUpdate(new Date());
-        
-        // Reset animation after brief moment
-        setTimeout(() => setIsUpdating(false), 500);
-        
-        console.log('Location updated:', {
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
-          accuracy: pos.coords.accuracy,
-          timestamp: new Date().toISOString()
-        });
-      },
-      (err) => {
-        console.error('Geolocation error:', err);
-        setError(err.message);
-      },
-      {
-        enableHighAccuracy: true,  // Use GPS for highest accuracy
-        maximumAge: 0,             // Always get fresh position, no cached data
-        timeout: 5000,             // Reduced timeout for faster updates
-      }
-    );
-
-    return () => navigator.geolocation.clearWatch(watchId);
-  }, []);
+export default function LiveLocation({ coords, error, lastUpdate, isUpdating }: LiveLocationProps) {
 
   if (error) {
     return (

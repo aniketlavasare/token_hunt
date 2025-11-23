@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Image from "next/image"
 import { MiniKit, VerifyCommandInput, VerificationLevel, ISuccessResult } from '@worldcoin/minikit-js'
-import LiveLocation from "@/components/LiveLocation"
+import LocationTracker from "@/components/LocationTracker"
 
 export default function Home() {
   const [isVerified, setIsVerified] = useState(false)
@@ -128,7 +128,7 @@ export default function Home() {
         </div>
 
         <div className="w-full">
-          <LiveLocation />
+          <LocationTracker />
         </div>
 
         <div className="flex w-full flex-col gap-4 text-base font-medium sm:flex-row sm:justify-center">
