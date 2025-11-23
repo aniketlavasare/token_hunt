@@ -270,9 +270,9 @@ export default function Home() {
               🏹 Start Hunt
             </button>
           </Link>
-          <Link href="/campaign" className="w-full sm:w-auto">
+          <Link href={`/create-hunt?wallet=${walletAddress}`} className="w-full sm:w-auto">
             <button className="flex h-12 sm:h-12 w-full items-center justify-center gap-2 rounded-full border border-solid border-black/8 px-6 sm:px-8 transition-colors hover:border-transparent hover:bg-black/4 dark:border-white/[.145] dark:hover:bg-[#1a1a1a]">
-              🚀 Create Campaign
+              ➕ Create Hunt
             </button>
           </Link>
         </div>
